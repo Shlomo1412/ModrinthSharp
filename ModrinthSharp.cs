@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
+using System.IO;
 
 namespace ModrinthSharp
 {
@@ -91,6 +92,44 @@ namespace ModrinthSharp
         public int Offset { get; set; }
     }
 
+    public class User
+    {
+        public string Id { get; set; }
+        public string Username { get; set; }
+        public string Name { get; set; }
+        public string Email { get; set; }
+        public string Bio { get; set; }
+        public string AvatarUrl { get; set; }
+        public string GithubId { get; set; }
+        public string Role { get; set; }
+        public string Created { get; set; }
+    }
+
+    public class Team
+    {
+        public string Id { get; set; }
+        public string Name { get; set; }
+        public string AvatarUrl { get; set; }
+        public List<User> Members { get; set; }
+    }
+
+    public class Dependency
+    {
+        public string VersionId { get; set; }
+        public string ProjectId { get; set; }
+        public string DependencyType { get; set; }
+    }
+
+    public class ModrinthFile
+    {
+        public string Url { get; set; }
+        public string Filename { get; set; }
+        public string Hashes { get; set; }
+        public long Size { get; set; }
+        public string Primary { get; set; }
+        public string FileType { get; set; }
+    }
+
     public class ModrinthSharp
     {
         private static readonly HttpClient _httpClient = new HttpClient { BaseAddress = new System.Uri("https://api.modrinth.com/v2/") };
@@ -130,6 +169,69 @@ namespace ModrinthSharp
                 throw new HttpRequestException($"Failed to get version: {response.StatusCode}");
             var json = await response.Content.ReadAsStringAsync();
             return JsonSerializer.Deserialize<ModrinthVersion>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        }
+
+        public async Task<User> GetUserAsync(string usernameOrId)
+        {
+            var response = await _httpClient.GetAsync($"user/{usernameOrId}");
+            if (!response.IsSuccessStatusCode)
+                throw new HttpRequestException($"Failed to get user: {response.StatusCode}");
+            var json = await response.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<User>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        }
+
+        public async Task<Team> GetTeamAsync(string teamId)
+        {
+            var response = await _httpClient.GetAsync($"team/{teamId}");
+            if (!response.IsSuccessStatusCode)
+                throw new HttpRequestException($"Failed to get team: {response.StatusCode}");
+            var json = await response.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<Team>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        }
+
+        public async Task<List<Dependency>> GetProjectDependenciesAsync(string projectId)
+        {
+            var response = await _httpClient.GetAsync($"project/{projectId}/dependencies");
+            if (!response.IsSuccessStatusCode)
+                throw new HttpRequestException($"Failed to get dependencies: {response.StatusCode}");
+            var json = await response.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<List<Dependency>>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        }
+
+        public async Task<List<ModrinthFile>> GetVersionFilesAsync(string versionId)
+        {
+            var response = await _httpClient.GetAsync($"version/{versionId}/files");
+            if (!response.IsSuccessStatusCode)
+                throw new HttpRequestException($"Failed to get version files: {response.StatusCode}");
+            var json = await response.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<List<ModrinthFile>>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        }
+
+        public async Task DownloadFileAsync(string fileUrl, string destinationPath)
+        {
+            var response = await _httpClient.GetAsync(fileUrl);
+            if (!response.IsSuccessStatusCode)
+                throw new HttpRequestException($"Failed to download file: {response.StatusCode}");
+            using (var fs = new FileStream(destinationPath, FileMode.Create, FileAccess.Write, FileShare.None))
+            {
+                await response.Content.CopyToAsync(fs);
+            }
+        }
+
+        public async Task<SearchResult> SearchProjectsAdvancedAsync(string query, string[] categories = null, string[] loaders = null, string[] gameVersions = null, int limit = 10, int offset = 0)
+        {
+            var url = $"search?query={System.Web.HttpUtility.UrlEncode(query)}&limit={limit}&offset={offset}";
+            if (categories != null && categories.Length > 0)
+                url += "&categories=" + string.Join(",", categories);
+            if (loaders != null && loaders.Length > 0)
+                url += "&loaders=" + string.Join(",", loaders);
+            if (gameVersions != null && gameVersions.Length > 0)
+                url += "&game_versions=" + string.Join(",", gameVersions);
+            var response = await _httpClient.GetAsync(url);
+            if (!response.IsSuccessStatusCode)
+                throw new HttpRequestException($"Failed to search projects: {response.StatusCode}");
+            var json = await response.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<SearchResult>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
         }
     }
 }
