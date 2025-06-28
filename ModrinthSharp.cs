@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 using System.IO;
+using System.Net;
 
 namespace ModrinthSharp
 {
@@ -130,15 +131,36 @@ namespace ModrinthSharp
         public string FileType { get; set; }
     }
 
+    public class ModrinthApiException : HttpRequestException
+    {
+        public HttpStatusCode StatusCode { get; }
+        public string ApiError { get; }
+        public ModrinthApiException(string message, HttpStatusCode statusCode, string apiError = null)
+            : base(message + (apiError != null ? $" | API Error: {apiError}" : ""))
+        {
+            StatusCode = statusCode;
+            ApiError = apiError;
+        }
+    }
+
     public class ModrinthSharp
     {
         private static readonly HttpClient _httpClient = new HttpClient { BaseAddress = new System.Uri("https://api.modrinth.com/v2/") };
 
+        private static async Task ThrowIfNotSuccess(HttpResponseMessage response)
+        {
+            if (!response.IsSuccessStatusCode)
+            {
+                string apiError = null;
+                try { apiError = await response.Content.ReadAsStringAsync(); } catch { }
+                throw new ModrinthApiException($"Request failed: {response.StatusCode}", response.StatusCode, apiError);
+            }
+        }
+
         public async Task<ModrinthProject?> GetProjectAsync(string idOrSlug)
         {
             var response = await _httpClient.GetAsync($"project/{idOrSlug}");
-            if (!response.IsSuccessStatusCode)
-                throw new HttpRequestException($"Failed to get project: {response.StatusCode}");
+            await ThrowIfNotSuccess(response);
             var json = await response.Content.ReadAsStringAsync();
             return JsonSerializer.Deserialize<ModrinthProject>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
         }
@@ -147,8 +169,7 @@ namespace ModrinthSharp
         {
             var url = $"search?query={System.Web.HttpUtility.UrlEncode(query)}&limit={limit}&offset={offset}";
             var response = await _httpClient.GetAsync(url);
-            if (!response.IsSuccessStatusCode)
-                throw new HttpRequestException($"Failed to search projects: {response.StatusCode}");
+            await ThrowIfNotSuccess(response);
             var json = await response.Content.ReadAsStringAsync();
             return JsonSerializer.Deserialize<SearchResult>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
         }
@@ -156,8 +177,7 @@ namespace ModrinthSharp
         public async Task<List<ModrinthVersion>> GetProjectVersionsAsync(string projectId)
         {
             var response = await _httpClient.GetAsync($"project/{projectId}/version");
-            if (!response.IsSuccessStatusCode)
-                throw new HttpRequestException($"Failed to get project versions: {response.StatusCode}");
+            await ThrowIfNotSuccess(response);
             var json = await response.Content.ReadAsStringAsync();
             return JsonSerializer.Deserialize<List<ModrinthVersion>>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
         }
@@ -165,8 +185,7 @@ namespace ModrinthSharp
         public async Task<ModrinthVersion> GetVersionAsync(string versionId)
         {
             var response = await _httpClient.GetAsync($"version/{versionId}");
-            if (!response.IsSuccessStatusCode)
-                throw new HttpRequestException($"Failed to get version: {response.StatusCode}");
+            await ThrowIfNotSuccess(response);
             var json = await response.Content.ReadAsStringAsync();
             return JsonSerializer.Deserialize<ModrinthVersion>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
         }
@@ -174,8 +193,7 @@ namespace ModrinthSharp
         public async Task<User> GetUserAsync(string usernameOrId)
         {
             var response = await _httpClient.GetAsync($"user/{usernameOrId}");
-            if (!response.IsSuccessStatusCode)
-                throw new HttpRequestException($"Failed to get user: {response.StatusCode}");
+            await ThrowIfNotSuccess(response);
             var json = await response.Content.ReadAsStringAsync();
             return JsonSerializer.Deserialize<User>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
         }
@@ -183,8 +201,7 @@ namespace ModrinthSharp
         public async Task<Team> GetTeamAsync(string teamId)
         {
             var response = await _httpClient.GetAsync($"team/{teamId}");
-            if (!response.IsSuccessStatusCode)
-                throw new HttpRequestException($"Failed to get team: {response.StatusCode}");
+            await ThrowIfNotSuccess(response);
             var json = await response.Content.ReadAsStringAsync();
             return JsonSerializer.Deserialize<Team>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
         }
@@ -192,8 +209,7 @@ namespace ModrinthSharp
         public async Task<List<Dependency>> GetProjectDependenciesAsync(string projectId)
         {
             var response = await _httpClient.GetAsync($"project/{projectId}/dependencies");
-            if (!response.IsSuccessStatusCode)
-                throw new HttpRequestException($"Failed to get dependencies: {response.StatusCode}");
+            await ThrowIfNotSuccess(response);
             var json = await response.Content.ReadAsStringAsync();
             return JsonSerializer.Deserialize<List<Dependency>>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
         }
@@ -201,8 +217,7 @@ namespace ModrinthSharp
         public async Task<List<ModrinthFile>> GetVersionFilesAsync(string versionId)
         {
             var response = await _httpClient.GetAsync($"version/{versionId}/files");
-            if (!response.IsSuccessStatusCode)
-                throw new HttpRequestException($"Failed to get version files: {response.StatusCode}");
+            await ThrowIfNotSuccess(response);
             var json = await response.Content.ReadAsStringAsync();
             return JsonSerializer.Deserialize<List<ModrinthFile>>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
         }
@@ -210,8 +225,7 @@ namespace ModrinthSharp
         public async Task DownloadFileAsync(string fileUrl, string destinationPath)
         {
             var response = await _httpClient.GetAsync(fileUrl);
-            if (!response.IsSuccessStatusCode)
-                throw new HttpRequestException($"Failed to download file: {response.StatusCode}");
+            await ThrowIfNotSuccess(response);
             using (var fs = new FileStream(destinationPath, FileMode.Create, FileAccess.Write, FileShare.None))
             {
                 await response.Content.CopyToAsync(fs);
@@ -228,8 +242,7 @@ namespace ModrinthSharp
             if (gameVersions != null && gameVersions.Length > 0)
                 url += "&game_versions=" + string.Join(",", gameVersions);
             var response = await _httpClient.GetAsync(url);
-            if (!response.IsSuccessStatusCode)
-                throw new HttpRequestException($"Failed to search projects: {response.StatusCode}");
+            await ThrowIfNotSuccess(response);
             var json = await response.Content.ReadAsStringAsync();
             return JsonSerializer.Deserialize<SearchResult>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
         }
