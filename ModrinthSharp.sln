@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36212.18 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ModrinthSharp", "ModrinthSharp.csproj", "{24F1FE82-4072-48FE-A198-7CD5200E5DE1}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{24F1FE82-4072-48FE-A198-7CD5200E5DE1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{24F1FE82-4072-48FE-A198-7CD5200E5DE1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{24F1FE82-4072-48FE-A198-7CD5200E5DE1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{24F1FE82-4072-48FE-A198-7CD5200E5DE1}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {853982C1-0D4E-4B93-A585-EA44A8885B12}
+	EndGlobalSection
+EndGlobal
