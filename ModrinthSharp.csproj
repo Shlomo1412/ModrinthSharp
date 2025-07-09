@@ -6,4 +6,19 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+	<ItemGroup>
+		<None Include="README.md" Pack="true" PackagePath="" />
+	</ItemGroup>
+
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<PackageId>ModrinthSharp</PackageId>
+		<Version>1.1.0</Version>
+		<Authors>Shlomo1412</Authors>
+		<Company>MatriX</Company>
+		<Description>ModrinthSharp is a .NET 8 library for accessing the Modrinth API in C#. It provides easy-to-use methods for searching, retrieving, and analyzing Modrinth projects, versions, users, teams, dependencies, and files.</Description>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+	</PropertyGroup>
+
 </Project>

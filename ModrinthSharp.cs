@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Text.Json.Serialization;
 using System.IO;
 using System.Net;
+using System.Linq;
 
 namespace ModrinthSharp
 {
@@ -167,7 +168,7 @@ namespace ModrinthSharp
 
         public async Task<SearchResult> SearchProjectsAsync(string query, int limit = 10, int offset = 0)
         {
-            var url = $"search?query={System.Web.HttpUtility.UrlEncode(query)}&limit={limit}&offset={offset}";
+            var url = $"search?query={System.Net.WebUtility.UrlEncode(query)}&limit={limit}&offset={offset}";
             var response = await _httpClient.GetAsync(url);
             await ThrowIfNotSuccess(response);
             var json = await response.Content.ReadAsStringAsync();
@@ -234,7 +235,7 @@ namespace ModrinthSharp
 
         public async Task<SearchResult> SearchProjectsAdvancedAsync(string query, string[] categories = null, string[] loaders = null, string[] gameVersions = null, int limit = 10, int offset = 0)
         {
-            var url = $"search?query={System.Web.HttpUtility.UrlEncode(query)}&limit={limit}&offset={offset}";
+            var url = $"search?query={System.Net.WebUtility.UrlEncode(query)}&limit={limit}&offset={offset}";
             if (categories != null && categories.Length > 0)
                 url += "&categories=" + string.Join(",", categories);
             if (loaders != null && loaders.Length > 0)
@@ -246,5 +247,102 @@ namespace ModrinthSharp
             var json = await response.Content.ReadAsStringAsync();
             return JsonSerializer.Deserialize<SearchResult>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
         }
+
+        public async Task<List<ModrinthProject>> GetRandomProjectsAsync(int count = 10, string projectType = null)
+        {
+            if (count > 100) count = 100; // API limit
+            if (count < 1) count = 1;
+            
+            var url = $"projects_random?count={count}";
+            var response = await _httpClient.GetAsync(url);
+            await ThrowIfNotSuccess(response);
+            var json = await response.Content.ReadAsStringAsync();
+            var projects = JsonSerializer.Deserialize<List<ModrinthProject>>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            
+            // Filter by project type if specified (since the API doesn't support this parameter)
+            if (!string.IsNullOrEmpty(projectType))
+            {
+                projects = projects.Where(p => p.ProjectType?.Equals(projectType, StringComparison.OrdinalIgnoreCase) == true).ToList();
+            }
+            
+            return projects ?? new List<ModrinthProject>();
+        }
+
+        public async Task<SearchResult> GetTrendingProjectsAsync(int limit = 10, string projectType = null)
+        {
+            var url = $"search?limit={limit}&index=downloads&offset=0";
+            
+            if (!string.IsNullOrEmpty(projectType))
+                url += $"&project_type={projectType}";
+            
+            var response = await _httpClient.GetAsync(url);
+            await ThrowIfNotSuccess(response);
+            var json = await response.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<SearchResult>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        }
+
+        public async Task<SearchResult> GetPopularProjectsAsync(int limit = 10, string projectType = null)
+        {
+            var url = $"search?limit={limit}&index=follows&offset=0";
+            
+            if (!string.IsNullOrEmpty(projectType))
+                url += $"&project_type={projectType}";
+            
+            var response = await _httpClient.GetAsync(url);
+            await ThrowIfNotSuccess(response);
+            var json = await response.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<SearchResult>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        }
+
+        public async Task<SearchResult> GetRecentProjectsAsync(int limit = 10, string projectType = null)
+        {
+            var url = $"search?limit={limit}&index=updated&offset=0";
+            
+            if (!string.IsNullOrEmpty(projectType))
+                url += $"&project_type={projectType}";
+            
+            var response = await _httpClient.GetAsync(url);
+            await ThrowIfNotSuccess(response);
+            var json = await response.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<SearchResult>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        }
+
+        public async Task<SearchResult> GetNewProjectsAsync(int limit = 10, string projectType = null)
+        {
+            var url = $"search?limit={limit}&index=newest&offset=0";
+            
+            if (!string.IsNullOrEmpty(projectType))
+                url += $"&project_type={projectType}";
+            
+            var response = await _httpClient.GetAsync(url);
+            await ThrowIfNotSuccess(response);
+            var json = await response.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<SearchResult>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        }
+
+        // Helper methods for specific project types - updated to work with new return type
+        public async Task<List<ModrinthProject>> GetRandomModsAsync(int count = 10) =>
+            await GetRandomProjectsAsync(count, "mod");
+
+        public async Task<List<ModrinthProject>> GetRandomModpacksAsync(int count = 10) =>
+            await GetRandomProjectsAsync(count, "modpack");
+
+        public async Task<List<ModrinthProject>> GetRandomResourcePacksAsync(int count = 10) =>
+            await GetRandomProjectsAsync(count, "resourcepack");
+
+        public async Task<List<ModrinthProject>> GetRandomShadersAsync(int count = 10) =>
+            await GetRandomProjectsAsync(count, "shader");
+
+        public async Task<SearchResult> GetTrendingModsAsync(int limit = 10) =>
+            await GetTrendingProjectsAsync(limit, "mod");
+
+        public async Task<SearchResult> GetTrendingModpacksAsync(int limit = 10) =>
+            await GetTrendingProjectsAsync(limit, "modpack");
+
+        public async Task<SearchResult> GetTrendingResourcePacksAsync(int limit = 10) =>
+            await GetTrendingProjectsAsync(limit, "resourcepack");
+
+        public async Task<SearchResult> GetTrendingShadersAsync(int limit = 10) =>
+            await GetTrendingProjectsAsync(limit, "shader");
     }
 }
