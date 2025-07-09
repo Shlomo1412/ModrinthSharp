@@ -48,6 +48,28 @@ foreach (var project in results.Hits)
     Console.WriteLine($"{project.Title} ({project.Slug})");
 }
 ```
+
+### Get Random Projects
+Get a list of random projects from Modrinth:
+```
+// Get 10 random projects of any type
+var randomProjects = await modrinth.GetRandomProjectsAsync(10);
+foreach (var project in randomProjects) 
+{ 
+    Console.WriteLine($"{project.Title} ({project.ProjectType}) - {project.Downloads} downloads"); 
+}
+
+// Get random projects filtered by type 
+var randomMods = await modrinth.GetRandomProjectsAsync(15, "mod"); 
+var randomModpacks = await modrinth.GetRandomProjectsAsync(5, "modpack");
+
+// Helper methods for specific project types
+var randomMods = await modrinth.GetRandomModsAsync(10); 
+var randomShaders = await modrinth.GetRandomShadersAsync(5); 
+var randomResourcePacks = await modrinth.GetRandomResourcePacksAsync(8); 
+var randomModpacks = await modrinth.GetRandomModpacksAsync(3);
+
+```
 ### Advanced Search
 Search with filters (categories, loaders, game versions):
 ```
