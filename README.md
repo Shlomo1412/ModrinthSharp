@@ -1,3 +1,6 @@
+[![NuGet](https://img.shields.io/nuget/v/DrMod.svg?style=flat-square&color=informational)](https://www.nuget.org/packages/ModrinthSharp)
+[![GitHub Repo](https://img.shields.io/badge/GitHub-DrMod-black?logo=github&style=flat-square)](https://github.com/Shlomo1412/ModrinthSharp)
+
 # ModrinthSharp
 
 ModrinthSharp is a .NET 8 library for accessing the Modrinth API in C#. It provides easy-to-use methods for searching, retrieving, and analyzing Modrinth projects, versions, users, teams, dependencies, and files.
